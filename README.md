@@ -68,4 +68,5 @@ All the python workflow can be found in example_vit.ipynb
 ## Spectrogram approach
 Spectrogram based models are implemented in tensorflow.
 Training using 3 seconds audio.
-In test_spectrogram_models.ipynb example of predictions using models.
+In test_spectrogram_models.ipynb example of processing the audio before giving to the model and predictions using models can be found.
+
