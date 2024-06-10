@@ -64,3 +64,8 @@ Then you can use RIOT-ML to flash the model on the card.
 ## Testing it yourself
 All the python workflow can be found in example_vit.ipynb
 
+
+## Spectrogram approach
+Spectrogram based models are implemented in tensorflow.
+Training using 3 seconds audio.
+In test_spectrogram_models.ipynb example of predictions using models.
