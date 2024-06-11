@@ -5,14 +5,14 @@ APPLICATION = patch_inference
 BOARD ?= native
 
 # This has to be the absolute path to the RIOT base directory:
-RIOTBASE ?= $(CURDIR)/../..
+RIOTBASE ?= $(HOME)/RIOT
 
 # Comment this out to disable code in RIOT that does safety checking
 # which is not needed in a production environment but helps in the
 # development process:
 DEVELHELP ?= 1
-CFLAGS_OPT = -O0
-
+#CFLAGS_OPT = -O0
+CFLAGS += -DTHREAD_STACKSIZE_DEFAULT=2048
 USEMODULE += printf_float
 # Change this to 0 show compiler invocation lines by default:
 QUIET ?= 1
