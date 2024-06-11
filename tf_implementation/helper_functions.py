@@ -46,6 +46,16 @@ def create_spectrogram_features(audio, desired_length, sample_rate):
     log_mel_spectrogram_with_color_channel = tf.expand_dims(log_mel_spectrogram, axis=-1).numpy()
     return log_mel_spectrogram_with_color_channel
 
+def evaluate_prediction(y_true, y_pred):
+    accuracy = accuracy_score(y_true, y_pred)
+    recall = recall_score(y_true, y_pred, average='macro')
+    precision = precision_score(y_true, y_pred)
+    f1score = f1_score(y_true, y_pred)
+
+    print(f'Accuracy: {accuracy * 100:.2f}%')
+    print(f'Recall: {recall * 100:.2f}%')
+    print(f'Precision: {precision * 100:.2f}%')
+    print(f'F1-score: {f1score * 100:.2f}%')
 
 def lite_model_from_file_predicts_dataset(model_path, x_data, y_true, input_data_uint8_type=False):
     interpreter = tf.lite.Interpreter(model_path=model_path)
@@ -65,14 +75,7 @@ def lite_model_from_file_predicts_dataset(model_path, x_data, y_true, input_data
         pred_label = np.argmax(pred_prob, axis=1)
         pred_labels.append(pred_label)
 
-    accuracy = accuracy_score(y_true, pred_labels)
-    recall = recall_score(y_true, pred_labels, average='macro')
-    precision = precision_score(y_true, pred_labels)
-    f1score = f1_score(y_true, pred_labels)
-    print(f'Accuracy: {accuracy * 100:.2f}%')
-    print(f'Recall: {recall * 100:.2f}%')
-    print(f'Precision: {precision * 100:.2f}%')
-    print(f'F1-score: {f1score * 100:.2f}%')
+    evaluate_prediction(y_true, pred_labels)
     return pred_labels
 
 
