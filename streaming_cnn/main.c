@@ -3,6 +3,11 @@
 #include <math.h>
 #include <float.h>
 #include <string.h>
+#include <inttypes.h>
+
+#include "xtimer.h"
+
+
 #define MAX_LINE_LENGTH 1024
 
 typedef float real_t;
@@ -141,7 +146,7 @@ void CNN_model_inference(real_t* input_data, real_t* output ,real_t** kernel1, i
     
     int outputSize = (input_size -kernelSize1 +1)/2 - kernelSize2 + 1;
     for (int i = 0; i < input_size - kernelSize2 ; i+= tile_size){
-        printf("i=%d\n",i);
+//        printf("i=%d\n",i);
         fill_tile(tile, input_data, i, tile_size + kernelSize1 -1);
         conv1d_and_relu_multi_channel(tile, kernel1, intermediate, convbias1,channel_number1,tile_size + kernelSize1 - 1, kernelSize1);
         maxpool1d_channel(intermediate, tile_size,channel_number1,intermediate2);
@@ -359,10 +364,15 @@ int main(void){
         input_data[i] = i/10000.0f;
     }   
     puts("Ok on lance l'inference");
+    
+    uint32_t inference_duration;
+    inference_duration = xtimer_now_usec();
     CNN_model_inference(input_data, output, kernel1, channel_number1, kernelSize1, kernel2, channel_number2, kernelSize2, tile_size, input_size, weight1, weight2,fcbias1,fcbias2, convbias1, convbias2);
+    inference_duration = xtimer_now_usec() - inference_duration;
     
     printf("\nLe résultat est : \n");
     print_array(output,2);
+    printf("inference duration in usec: %" PRIu32 " \n", inference_duration);
     
 
 }

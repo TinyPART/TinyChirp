@@ -13,7 +13,7 @@ RIOTBASE ?= $(HOME)/RIOT
 DEVELHELP ?= 1
 #CFLAGS_OPT = -O0
 CFLAGS += -DTHREAD_STACKSIZE_DEFAULT=2048
-USEMODULE += printf_float
+USEMODULE += printf_float xtimer
 # Change this to 0 show compiler invocation lines by default:
 QUIET ?= 1
 
