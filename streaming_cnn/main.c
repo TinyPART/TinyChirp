@@ -4,9 +4,8 @@
 #include <float.h>
 #include <string.h>
 #include <inttypes.h>
-
 #include "xtimer.h"
-
+#include "array_data.h"
 
 #define MAX_LINE_LENGTH 1024
 
@@ -156,7 +155,7 @@ void CNN_model_inference(real_t* input_data, real_t* output ,real_t** kernel1, i
     free_2d_array(intermediate,channel_number1);
     free_2d_array(intermediate2,channel_number1);
     
-    for(int i = 0; i< 32;i++){
+    for(int i = 0; i< channel_number2;i++){
         output_tile[i] /= outputSize;;
         // Since the bias is the same for every element of the same channel
         // It is added outputSize times to a channel, so we just have to add it once after division
@@ -164,210 +163,34 @@ void CNN_model_inference(real_t* input_data, real_t* output ,real_t** kernel1, i
     }
     //print_array(output_tile,channel_number2);
     printf("%f test",weight1[0][0]);
-    mlp(output_tile, output, 32, 64, 2, weight1, weight2, fcbias1, fcbias2 );
-}
-/*
-I have to rework this function
-Either I flash the file containing the weights and use the filesystem to access it on the MCU
-Or I compile the program directly with the values included in it
-void read_parameters_from_file(const char *file_name,
-                               real_t conv1_weight[],
-                               real_t conv1_bias[],
-                               real_t conv2_weight[],
-                               real_t conv2_bias[],
-                               real_t fc1_weight[],
-                               real_t fc1_bias[],
-                               real_t fc2_weight[],
-                               real_t fc2_bias[],
-                               int conv1_size,
-                               int conv2_size,
-                               int convb1_size,
-                               int convb2_size,
-                               int fc1_size,
-                               int fc2_size,
-                               int fcb1_size,
-                               int fcb2_size) {
-    FILE *file = fopen(file_name, "r");
-    if (file == NULL) {
-        perror("Error opening file");
-        return;
-    }
-
-    char line[MAX_LINE_LENGTH];
-    while (fgets(line, sizeof(line), file)) {
-        if (strstr(line, "conv1.weight")) {
-            for (int i = 0; i < conv1_size; ++i) {
-                fscanf(file, "%lf", &conv1_weight[i]);
-            }
-        }else if (strstr(line, "conv1.bias")) {
-            for (int i = 0; i < convb1_size; ++i) {
-                fscanf(file, "%lf", &conv1_bias[i]);
-            } 
-        }else if (strstr(line, "conv2.weight")) {
-            for (int i = 0; i < conv2_size; ++i) {
-                fscanf(file, "%lf", &conv2_weight[i]);
-            }
-        }else if (strstr(line, "conv2.bias")) {
-            for (int i = 0; i < convb2_size; ++i) {
-                fscanf(file, "%lf", &conv2_bias[i]);
-            } 
-        } else if (strstr(line, "fc1.weight")) {
-            for (int i = 0; i < fc1_size; ++i) {
-                fscanf(file, "%lf", &fc1_weight[i]);
-            }
-        } else if (strstr(line, "fc1.bias")) {
-            for (int i = 0; i < fcb1_size; ++i) {
-                fscanf(file, "%lf", &fc1_bias[i]);
-            }
-        } else if (strstr(line, "fc2.weight")) {
-            for (int i = 0; i < fc2_size; ++i) {
-                fscanf(file, "%lf", &fc2_weight[i]);
-            }
-        } else if (strstr(line, "fc2.bias")) {
-            for (int i = 0; i < fcb2_size; ++i) {
-                fscanf(file, "%lf", &fc2_bias[i]);
-            }
-        }
-    }
-
-    fclose(file);
+    mlp(output_tile, output, 4, 64, 2, weight1, weight2, fcbias1, fcbias2 );
 }
 
-void fill2d(int dim1, int dim2, real_t flattened_array[], real_t** result_array ){
-    int index = 0;
-    for (int i = 0; i < dim1;i++){
-        for (int j = 0; j < dim2; j ++){
-            result_array[i][j] = flattened_array[index];
-            index++;
-        }
-    }
-}
-
-void fill3d(int dim1, int dim2, int dim3, real_t flattened_array[], real_t*** result_array){
-    int index = 0;
-    for (int i = 0; i < dim1; i++){
-        for (int j = 0; j < dim2; j++){
-            for (int k = 0; k < dim3; k++){
-                result_array[i][j][k] = flattened_array[index];
-                index++;
-            }
-        }
-    }
-
-}
-*/
 
 static real_t input_data[16000];
 int main(void){
     // Test
+    
     puts("Début des hostilités");
     
-    int channel_number1 = 16;
+    int channel_number1 = 2;
     int kernelSize1 = 3;
-    int channel_number2 = 32;
+    int channel_number2 = 4;
     int kernelSize2 = 3;
-    int tile_size = 1024;
+    int tile_size = 128;
     int input_size = 16000;
     
-    
+    for (int i = 0; i < 16000;i++){
+        input_data[i] = i/16000.0f;
+    }
     
     real_t output[2];
 
-    
-    real_t fcbias1[64];
-    real_t fcbias2[2];
-    real_t convbias1[16];
-    real_t convbias2[32];
-    real_t**  kernel1 = allocate_2d_array(channel_number1, kernelSize1);
-    real_t*** kernel2 = allocate_3d_array(channel_number2, channel_number1, kernelSize2);
-    real_t** weight1 = allocate_2d_array(64, 32);
-    real_t** weight2 = allocate_2d_array(2,64);
-    /*
-    real_t kernel1_array[channel_number1 * kernelSize1];
-    real_t kernel2_array[channel_number1 * channel_number2 * kernelSize2];
-    real_t weight1_array[32*64];
-    real_t weight2_array[64*2];
-    read_parameters_from_file(
-        "test.txt",
-        kernel1_array,
-        convbias1,
-        kernel2_array,
-        convbias2,
-        weight1_array,
-        fcbias1,
-        weight2_array,
-        fcbias2,
-        channel_number1 * kernelSize1,
-        channel_number1 * channel_number2 * kernelSize2,
-        16,
-        32,
-        32*64,
-        64*2,
-        16,
-        32
-        );
-    
-
-    
-
-    fill2d(channel_number1, kernelSize1, kernel1_array, kernel1);
-    fill2d(64,32,weight1_array,weight1);
-    fill2d(2,64,weight2_array,weight2);
-    fill3d(channel_number2,channel_number1,kernelSize2,kernel2_array, kernel2);
-    */
-
-    //On va donner des valeurs en utilisant les 1d arrays.
-
-
-    
-    // Donner des valeurs aux kernel et aux weights du mlp
-    printf("Start to init the parameters \n");
-    for (int i=0; i < channel_number1; i++){
-        for (int j = 0; j< kernelSize1; j++){
-//            printf("kernel1 i: %d, j: %d \n", i, j);
-            kernel1[i][j] = (i+j+1)/100.0f;
-        }
-        for(int j = 0; j< channel_number2;j++){
-            for (int k = 0; k < kernelSize2; k++){
-//                printf("kernel2 i: %d, j: %d, k: %d \n", i, j, k);
-                kernel2[j][i][k] = ((i+1)*(j+1)*(k+1))/100.0f;
-            }
-        }
-    }
-    
-    for (int i = 0;i<64;i++){
-        for (int j = 0;j<32;j++){
-//            printf("weight1 i: %d, j: %d \n", i, j);
-            weight1[i][j] = (i + j) /100.0f;
-        }
-        for(int j = 0;j<2;j++){
-//            printf("weight2 i: %d, j: %d \n", i, j);
-            weight2[j][i]    = (real_t)i / (((real_t)j+1.0f)*100.0f) ;
-        }
-    }
-    
-//    printf("%f test",weight1[0][0]);
-    for (int i = 0; i< 64; i++){
-        fcbias1[i] = i;
-    }
-    for (int i = 0; i< 2;i++){
-        fcbias2[i] = i;
-    }
-    for (int i = 0; i< 16;i++){
-        convbias1[i] = i;
-    }
-    for (int i = 0; i< 32;i++){
-        convbias2[i] = i;
-    }
-    
-   for (int i = 0; i< input_size;i++){
-        input_data[i] = i/10000.0f;
-    }   
     puts("Ok on lance l'inference");
     
     uint32_t inference_duration;
     inference_duration = xtimer_now_usec();
-    CNN_model_inference(input_data, output, kernel1, channel_number1, kernelSize1, kernel2, channel_number2, kernelSize2, tile_size, input_size, weight1, weight2,fcbias1,fcbias2, convbias1, convbias2);
+    CNN_model_inference(input_data, output, conv1weight, channel_number1, kernelSize1, conv2weight, channel_number2, kernelSize2, tile_size, input_size, fc1weight, fc2weight,fc1bias,fc2bias, conv1bias, conv2bias);
     inference_duration = xtimer_now_usec() - inference_duration;
     
     printf("\nLe résultat est : \n");
