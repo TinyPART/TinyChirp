@@ -4,8 +4,8 @@ from tqdm import tqdm
 import sys
 from torch.nn import functional as F
 from torch.optim.lr_scheduler import StepLR
-sys.path.append("BirdNET-Analyzer")
-import analyze
+# sys.path.append("BirdNET-Analyzer")
+# import analyze
 
 def loss_kd(teacher_outputs,student_outputs,targets,lmbd,T):
     # Loss for the knowledge distillation
@@ -89,7 +89,7 @@ def evaluate_model_accuracy(model, val_dataloader,device,squeeze = False):
             preds = torch.argmax(outputs,1)
             #print(f"Preds : {preds}\nTargets : {targets}")
             running_acc += torch.sum(preds == targets)
-    return running_acc/(len(val_dataloader)*32)  
+    return running_acc/(len(val_dataloader.dataset))  
 def train_and_evaluate_vit(student_model, train_dataloader, val_dataloader,  optimizer, epochs, device, checkpoint = None):
     # Function to train the ViT, and output at each epoch the validation accuracy
     if checkpoint is not None:
@@ -115,7 +115,7 @@ def train_and_evaluate_classic(student_model, train_dataloader, val_dataloader, 
         student_model.load_state_dict(torch.load(checkpoint, map_location=torch.device("cpu")))
         
     best_val_acc = 0.0
-    scheduler = StepLR(optimizer, step_size = 100, gamma = 0.2)
+    scheduler = StepLR(optimizer, step_size = 20, gamma = 0.2)
     student_model = student_model.to(device)
     print(f"Lancement du training pour {epochs} epochs")
     for epoch in range(epochs):
