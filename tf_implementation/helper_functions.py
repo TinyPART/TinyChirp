@@ -19,7 +19,7 @@ def squeeze(audio, labels=None):
 
 def create_spectrogram_features(audio, desired_length, sample_rate):
     # Make all audios the same length 
-    audio, _ = squeeze(audio)
+    # audio, _ = squeeze(audio)
     audio_length = tf.shape(audio)[0]
     if audio_length < desired_length:
         audio = tf.pad(audio, [[0, desired_length - audio_length]], mode='CONSTANT')
@@ -32,7 +32,7 @@ def create_spectrogram_features(audio, desired_length, sample_rate):
     spectrogram = tf.abs(stfts)
     # Warp the linear scale spectrogram into the mel-scale.
     num_spectrogram_bins = stfts.shape[-1]
-    lower_edge_hertz, upper_edge_hertz, num_mel_bins = 80.0, 12000.0, 80
+    lower_edge_hertz, upper_edge_hertz, num_mel_bins = 80.0, 8000.0, 80
     linear_to_mel_weight_matrix = tf.signal.linear_to_mel_weight_matrix(
         num_mel_bins, num_spectrogram_bins, sample_rate, lower_edge_hertz,
         upper_edge_hertz)
