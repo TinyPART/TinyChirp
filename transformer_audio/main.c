@@ -94,9 +94,6 @@ void convolutional_layers_inference(real_t* input_data, real_t* output ,real_t**
     real_t* tile = malloc(sizeof(real_t) * (tile_size + kernelSize1 -1));
     real_t**  intermediate = allocate_2d_array(channel_number1, tile_size);
     real_t** intermediate2 = allocate_2d_array(channel_number1, tile_size/2);
-    for (int i = 0; i< block->head->n_embd;i++){
-        output[i] = 0.0f;
-    }
 
     int outputSize = (input_size -kernelSize1 +1)/2;
     for (int i = 0; i <= input_size - kernelSize1; i+= tile_size){
@@ -124,15 +121,16 @@ void model_inference(void)
         for (int i = 0; i < 16000;i++){
         input_data[i] = i/160.0f;
         }
-        convolutional_layers_inference(input_data,input->values,conv1weight,channel_number1,kernelSize1,tile_size,input_size,conv1bias)
-    
 
-        //float* input_val = input->values; //pointer to input data
-        
-        
         //run inference
         int start, end;
         start =  xtimer_now_usec();
+        for(int i = 0; i < 3; i++){
+        convolutional_layers_inference(input_data,input->values,conv1weight,channel_number1,kernelSize1,tile_size,input_size,conv1bias);
+        }   
+        
+        //float* input_val = input->values; //pointer to input data
+        
         int ret_val = mlmodel_inference(model_ptr);
         end =  xtimer_now_usec();
         printf("inference usec: %ld, ret: %d \n", (long int)(end - start), ret_val);
