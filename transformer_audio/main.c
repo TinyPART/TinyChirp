@@ -117,7 +117,7 @@ void model_inference(void)
         //set input data
         mlmodel_iovar_t *input = mlmodel_get_input_variable(model_ptr, 0);
 
-        int channel_number1 = 8;
+        int channel_number1 = 16;
         int kernelSize1 = 3;
         int tile_size = 128;
         int input_size = 16000;
