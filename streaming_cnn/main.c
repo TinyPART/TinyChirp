@@ -142,16 +142,15 @@ void CNN_model_inference(real_t* input_data, real_t* output ,real_t** kernel1, i
         output_tile[i] = 0.0f;
     }
 
-    
     int outputSize = (input_size -kernelSize1 +1)/2 - kernelSize2 + 1;
     for (int i = 0; i < input_size - kernelSize2 ; i+= tile_size){
-//        printf("i=%d\n",i);
+
         fill_tile(tile, input_data, i, tile_size + kernelSize1 -1);
         conv1d_and_relu_multi_channel(tile, kernel1, intermediate, convbias1,channel_number1,tile_size + kernelSize1 - 1, kernelSize1);
         maxpool1d_channel(intermediate, tile_size,channel_number1,intermediate2);
         multi_channel_aggregation_and_pooling(intermediate2, output_tile, kernel2, channel_number1, channel_number2, tile_size/2, kernelSize2,i/2,(input_size -kernelSize1 +1)/2);
     }
-    puts("ping!");
+
     free_2d_array(intermediate,channel_number1);
     free_2d_array(intermediate2,channel_number1);
     
@@ -161,8 +160,7 @@ void CNN_model_inference(real_t* input_data, real_t* output ,real_t** kernel1, i
         // It is added outputSize times to a channel, so we just have to add it once after division
         output_tile[i] += convbias2[i];
     }
-    //print_array(output_tile,channel_number2);
-    printf("%f test",weight1[0][0]);
+
     mlp(output_tile, output, 4, 64, 2, weight1, weight2, fcbias1, fcbias2 );
 }
 
@@ -173,9 +171,9 @@ int main(void){
     
     puts("Début des hostilités");
     
-    int channel_number1 = 2;
+    int channel_number1 = 4;
     int kernelSize1 = 3;
-    int channel_number2 = 4;
+    int channel_number2 = 8;
     int kernelSize2 = 3;
     int tile_size = 128;
     int input_size = 16000;
@@ -192,10 +190,10 @@ int main(void){
     inference_duration = xtimer_now_usec();
     CNN_model_inference(input_data, output, conv1weight, channel_number1, kernelSize1, conv2weight, channel_number2, kernelSize2, tile_size, input_size, fc1weight, fc2weight,fc1bias,fc2bias, conv1bias, conv2bias);
     inference_duration = xtimer_now_usec() - inference_duration;
+    printf("inference duration in usec: %" PRIu32 " \n", inference_duration);
     
     printf("\nLe résultat est : \n");
     print_array(output,2);
-    printf("inference duration in usec: %" PRIu32 " \n", inference_duration);
     
-
+    return 0; 
 }
