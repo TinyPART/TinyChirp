@@ -89,11 +89,26 @@ void maxpool1d_channel(real_t** tile, int tile_size, int channel_number, real_t*
         }
     }
 }
+
+#define CHANNEL_NUM1 16
+#define KERNEL_SIZE1 3
+#define TILE_SIZE 128
+#define INPUT_SIZE 16000
+
+static real_t tile[TILE_SIZE + KERNEL_SIZE1 -1];
+static real_t intermediate_val[CHANNEL_NUM1][TILE_SIZE];
+static real_t intermediate2_val[CHANNEL_NUM1][TILE_SIZE/2];
+
 void convolutional_layers_inference(real_t* input_data, real_t* output ,real_t** kernel1, int channel_number1, int kernelSize1, int tile_size, int input_size, real_t* convbias1){
 //    real_t tile[tile_size + kernelSize1 -1]; // take too much stack!
-    real_t* tile = malloc(sizeof(real_t) * (tile_size + kernelSize1 -1));
-    real_t**  intermediate = allocate_2d_array(channel_number1, tile_size);
-    real_t** intermediate2 = allocate_2d_array(channel_number1, tile_size/2);
+//    real_t* tile = malloc(sizeof(real_t) * (tile_size + kernelSize1 -1));
+    real_t**  intermediate[CHANNEL_NUM1];
+    real_t** intermediate2[CHANNEL_NUM1];
+    
+    for (int i = 0; i < CHANNEL_NUM1; i++) {
+        intermediate[i] = &intermediate_val[i][0];
+        intermediate2[i] = &intermediate2_val[i][0];
+    }
 
     int outputSize = (input_size -kernelSize1 +1)/2;
     for (int i = 0; i <= input_size - kernelSize1; i+= tile_size){
@@ -106,7 +121,7 @@ void convolutional_layers_inference(real_t* input_data, real_t* output ,real_t**
         output[i] /= outputSize;
     }
 }
-static real_t input_data[16000];
+static real_t input_data[INPUT_SIZE];
 void model_inference(void)
 {       
 
@@ -114,10 +129,10 @@ void model_inference(void)
         //set input data
         mlmodel_iovar_t *input = mlmodel_get_input_variable(model_ptr, 0);
 
-        int channel_number1 = 16;
-        int kernelSize1 = 3;
-        int tile_size = 128;
-        int input_size = 16000;
+        int channel_number1 = CHANNEL_NUM1;
+        int kernelSize1 = KERNEL_SIZE1;
+        int tile_size = TILE_SIZE;
+        int input_size = INPUT_SIZE;
 
         //run inference
         int start, end;
