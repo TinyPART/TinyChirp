@@ -161,7 +161,7 @@ void CNN_model_inference(real_t* input_data, real_t* output ,real_t** kernel1, i
         output_tile[i] += convbias2[i];
     }
 
-    mlp(output_tile, output, 4, 64, 2, weight1, weight2, fcbias1, fcbias2 );
+    mlp(output_tile, output, channel_number2, 64, 2, weight1, weight2, fcbias1, fcbias2 );
 }
 
 
@@ -182,13 +182,16 @@ int main(void){
     
     real_t output[2];
     
-    uint32_t inference_duration;
-    inference_duration = xtimer_now_usec();
-    for (int i = 0; i < 3; i++) {
-        CNN_model_inference(input_data, output, conv1weight, channel_number1, kernelSize1, conv2weight, channel_number2, kernelSize2, tile_size, input_size, fc1weight, fc2weight,fc1bias,fc2bias, conv1bias, conv2bias);
+    while(1) {
+        uint32_t inference_duration;
+        inference_duration = xtimer_now_usec();
+        
+        for (int i = 0; i < 3; i++) {
+            CNN_model_inference(input_data, output, conv1weight, channel_number1, kernelSize1, conv2weight, channel_number2, kernelSize2, tile_size, input_size, fc1weight, fc2weight,fc1bias,fc2bias, conv1bias, conv2bias);
+        }
+        inference_duration = xtimer_now_usec() - inference_duration;
+        printf("inference duration in usec: %" PRIu32 " \n", inference_duration);
     }
-    inference_duration = xtimer_now_usec() - inference_duration;
-    printf("inference duration in usec: %" PRIu32 " \n", inference_duration);
     
     printf("Inference output : \n");
     print_array(output,2);
