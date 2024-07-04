@@ -118,9 +118,6 @@ void model_inference(void)
         int kernelSize1 = 3;
         int tile_size = 128;
         int input_size = 16000;
-        for (int i = 0; i < 16000;i++){
-        input_data[i] = i/160.0f;
-        }
 
         //run inference
         int start, end;
@@ -145,6 +142,10 @@ int main(void)
 {
     mlmodel_init(model_ptr);
     mlmodel_set_global_model(model_ptr);
+    
+    for (int i = 0; i < 16000;i++){
+        input_data[i] = i/160.0f;
+    }
 
     model_inference();
 
