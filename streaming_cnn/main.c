@@ -169,8 +169,6 @@ static real_t input_data[16000];
 int main(void){
     // Test
     
-    puts("Début des hostilités");
-    
     int channel_number1 = 4;
     int kernelSize1 = 3;
     int channel_number2 = 8;
@@ -183,16 +181,16 @@ int main(void){
     }
     
     real_t output[2];
-
-    puts("Ok on lance l'inference");
     
     uint32_t inference_duration;
     inference_duration = xtimer_now_usec();
-    CNN_model_inference(input_data, output, conv1weight, channel_number1, kernelSize1, conv2weight, channel_number2, kernelSize2, tile_size, input_size, fc1weight, fc2weight,fc1bias,fc2bias, conv1bias, conv2bias);
+    for (int i = 0; i < 3; i++) {
+        CNN_model_inference(input_data, output, conv1weight, channel_number1, kernelSize1, conv2weight, channel_number2, kernelSize2, tile_size, input_size, fc1weight, fc2weight,fc1bias,fc2bias, conv1bias, conv2bias);
+    }
     inference_duration = xtimer_now_usec() - inference_duration;
     printf("inference duration in usec: %" PRIu32 " \n", inference_duration);
     
-    printf("\nLe résultat est : \n");
+    printf("Inference output : \n");
     print_array(output,2);
     
     return 0; 
