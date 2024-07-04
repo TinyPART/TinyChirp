@@ -7,9 +7,9 @@ APPLICATION = TinyBirdSound_baseline
 USEMODULE += printf_float
 
 # Modules to include:
-USEMODULE += shell
-USEMODULE += shell_cmds_default
-USEMODULE += ps
+# USEMODULE += shell
+# USEMODULE += shell_cmds_default
+# USEMODULE += ps
 
 # Use the default file system
 USEMODULE += vfs_default
