@@ -10,7 +10,7 @@ RIOTBASE ?= $(HOME)/RIOT
 # Comment this out to disable code in RIOT that does safety checking
 # which is not needed in a production environment but helps in the
 # development process:
-DEVELHELP ?= 1
+DEVELHELP ?= 0
 #CFLAGS_OPT = -O0
 CFLAGS += -DTHREAD_STACKSIZE_DEFAULT=2048
 USEMODULE += printf_float xtimer
