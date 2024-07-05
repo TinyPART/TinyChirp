@@ -131,11 +131,28 @@ void mlp(real_t* input, real_t* output, int input_size, int hidden_size, int out
         output[i] += bias2[i];
     }
 }
+
+#define CHANNEL_NUM1 4
+#define CHANNEL_NUM2 8
+#define KERNEL_SIZE1 3
+#define KERNEL_SIZE2 3
+#define TILE_SIZE 128
+#define INPUT_SIZE 16000
+
+static real_t tile[TILE_SIZE + KERNEL_SIZE1 -1];
+static real_t intermediate_val[CHANNEL_NUM1][TILE_SIZE];
+static real_t intermediate2_val[CHANNEL_NUM1][TILE_SIZE/2];
+
+
 void CNN_model_inference(real_t* input_data, real_t* output ,real_t** kernel1, int channel_number1, int kernelSize1, real_t *** kernel2, int channel_number2, int kernelSize2, int tile_size, int input_size, real_t** weight1, real_t** weight2,real_t* fcbias1, real_t* fcbias2, real_t* convbias1, real_t* convbias2){
 //    real_t tile[tile_size + kernelSize1 -1]; // take too much stack!
-    real_t* tile = malloc(sizeof(real_t) * (tile_size + kernelSize1 -1));
-    real_t**  intermediate = allocate_2d_array(channel_number1, tile_size);
-    real_t** intermediate2 = allocate_2d_array(channel_number1, tile_size/2);
+    real_t*  intermediate[CHANNEL_NUM1];
+    real_t* intermediate2[CHANNEL_NUM1];
+    
+    for (int i = 0; i < CHANNEL_NUM1; i++) {
+        intermediate[i] = &intermediate_val[i][0];
+        intermediate2[i] = &intermediate2_val[i][0];
+    }
     
     real_t output_tile[channel_number2];
     for (int i = 0; i< channel_number2;i++){
@@ -151,8 +168,6 @@ void CNN_model_inference(real_t* input_data, real_t* output ,real_t** kernel1, i
         multi_channel_aggregation_and_pooling(intermediate2, output_tile, kernel2, channel_number1, channel_number2, tile_size/2, kernelSize2,i/2,(input_size -kernelSize1 +1)/2);
     }
 
-    free_2d_array(intermediate,channel_number1);
-    free_2d_array(intermediate2,channel_number1);
     
     for(int i = 0; i< channel_number2;i++){
         output_tile[i] /= outputSize;;
@@ -169,12 +184,12 @@ static real_t input_data[16000];
 int main(void){
     // Test
     
-    int channel_number1 = 4;
-    int kernelSize1 = 3;
-    int channel_number2 = 8;
-    int kernelSize2 = 3;
-    int tile_size = 128;
-    int input_size = 16000;
+    int channel_number1 = CHANNEL_NUM1;
+    int kernelSize1 = KERNEL_SIZE1;
+    int channel_number2 = CHANNEL_NUM2;
+    int kernelSize2 = KERNEL_SIZE2;
+    int tile_size = TILE_SIZE;
+    int input_size = INPUT_SIZE;
     
     for (int i = 0; i < 16000;i++){
         input_data[i] = i/16000.0f;
