@@ -1,5 +1,5 @@
-import sys
-sys.path.append("BirdNET-Analyzer")
+# import sys
+# sys.path.append("BirdNET-Analyzer")
 
 import torchaudio
 from torchaudio import transforms as T
@@ -7,7 +7,7 @@ from torch.utils.data import Dataset
 import os
 import torch.nn.functional as F
 import config as cfg
-import analyze
+# import analyze
 
 
 def load_and_preprocess_audio(file_path):
@@ -18,6 +18,10 @@ def load_and_preprocess_audio(file_path):
     mel_spec_db = T.AmplitudeToDB()(mel_spec)
     mel_spec_db = mel_spec_db.permute(0,2,1)
     return mel_spec_db, waveform, sr
+
+def load_and_preprocess_raw_audio(file_path):
+    waveform, sr = torchaudio.load(file_path)
+    return waveform, sr
 
 
 class AudioDataset(Dataset):
@@ -84,7 +88,7 @@ class RawAudioDataset(Dataset):
             filename = self.non_target_files[idx-len(self.target_files)]
             label = 1
             filepath = os.path.join(self.non_target_folder, filename)
-        _,waveform, sample_rate = load_and_preprocess_audio(filepath)
+        waveform, sample_rate = load_and_preprocess_raw_audio(filepath)
         if self.transform:
             waveform = self.transform(waveform)
         if self.fixed_length_wave:
