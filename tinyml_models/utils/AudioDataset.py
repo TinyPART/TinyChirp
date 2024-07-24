@@ -1,13 +1,10 @@
-# import sys
-# sys.path.append("BirdNET-Analyzer")
-
 import torchaudio
 from torchaudio import transforms as T
 from torch.utils.data import Dataset
 import os
 import torch.nn.functional as F
 import config as cfg
-# import analyze
+
 
 
 def load_and_preprocess_audio(file_path):
