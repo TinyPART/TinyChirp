@@ -1,5 +1,9 @@
-# TinyBird Sounds
-## Vision Transformer Approach
+# TinyChirp
+Bird Song Recognition Using TinyML Models on Low-power Wireless Acoustic Sensors
+
+__Under Reconstruction...__
+
+## Transformer Approach
 To use the model and test it, you can use the TransformerModel class : 
 ```
 from TransformerModel import TransformerModel
