@@ -66,10 +66,7 @@ class TransformerBlock(nn.Module):
     def forward(self, x):
         
         x = x + self.sa(self.ln1(x))
-        print(self.ln2(x))
-        print(self.ffwd(self.ln2(x)))
         x = x + self.ffwd(self.ln2(x))
-        print(f"ffwd : {x}")
         return x
 
 class TransformerModel(nn.Module):
@@ -111,7 +108,6 @@ class RawAudioTransformerModel(nn.Module):
         x = self.pool(self.relu(self.conv1(x)))
         x = self.dropout(x)
         x = self.adpool(x)
-        print(x)
         x = x.squeeze(-1)
         x = self.blocks(x)
         x = self.ln_f(x)
