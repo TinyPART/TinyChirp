@@ -1,11 +1,9 @@
 TinyChirp
 =====================
 
-Bird Song Recognition Using TinyML Models on Low-power Wireless Acoustic Sensors
+If you cite this work, please cite the below reference:
 
-arXiv preprint: [click here](https://arxiv.org/abs/2407.21453)
-
-__Under Reconstruction...__
+Z. Huang, A. Tousnakhoff, P. Kozyr, R. Rehausen, F. Bießmann, R. Lachlan, C. Adjih, E. Baccelli. *TinyChirp: Bird Song Recognition Using TinyML Models on Low-power Wireless Acoustic Sensors,* in Proceedings of the IEEE International Symposium on the Internet of Sounds. Erlangen, Germany, September 2024. [[Preprint](https://arxiv.org/abs/2407.21453)]
 
 # Get Source Code
 
