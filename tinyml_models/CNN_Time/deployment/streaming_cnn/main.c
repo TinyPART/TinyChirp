@@ -5,11 +5,12 @@
 #include <string.h>
 #include <inttypes.h>
 #include "xtimer.h"
-#include "array_data.h"
+#include "blob/resampled_audio.bin.h"
 
 #define MAX_LINE_LENGTH 1024
 
 typedef float real_t;
+#include "array_data.h"
 void print_array(const real_t* array, int size){
     for (int i = 0; i < size; i++) {
         printf("%.6f", array[i]);
@@ -137,9 +138,10 @@ void mlp(real_t* input, real_t* output, int input_size, int hidden_size, int out
 #define KERNEL_SIZE1 3
 #define KERNEL_SIZE2 3
 #define TILE_SIZE 128
-#define INPUT_SIZE 16000
+#define INPUT_SIZE 48000
+#define ACTUAL_TILE_SIZE (TILE_SIZE + KERNEL_SIZE1 -1)
 
-static real_t tile[TILE_SIZE + KERNEL_SIZE1 -1];
+static real_t tile[ACTUAL_TILE_SIZE];
 static real_t intermediate_val[CHANNEL_NUM1][TILE_SIZE];
 static real_t intermediate2_val[CHANNEL_NUM1][TILE_SIZE/2];
 
@@ -148,6 +150,11 @@ void CNN_model_inference(real_t* input_data, real_t* output ,real_t** kernel1, i
 //    real_t tile[tile_size + kernelSize1 -1]; // take too much stack!
     real_t*  intermediate[CHANNEL_NUM1];
     real_t* intermediate2[CHANNEL_NUM1];
+    size_t actual_tile_size = tile_size + kernelSize1 -1;
+
+    memset(tile, 0, sizeof(tile));
+    memset(intermediate_val, 0, sizeof(intermediate_val));
+    memset(intermediate2_val, 0, sizeof(intermediate2_val));
     
     for (int i = 0; i < CHANNEL_NUM1; i++) {
         intermediate[i] = &intermediate_val[i][0];
@@ -160,10 +167,13 @@ void CNN_model_inference(real_t* input_data, real_t* output ,real_t** kernel1, i
     }
 
     int outputSize = (input_size -kernelSize1 +1)/2 - kernelSize2 + 1;
+    printf("outputSize: %d \n", outputSize);
     for (int i = 0; i < input_size - kernelSize2 ; i+= tile_size){
 
-        fill_tile(tile, input_data, i, tile_size + kernelSize1 -1);
-        conv1d_and_relu_multi_channel(tile, kernel1, intermediate, convbias1,channel_number1,tile_size + kernelSize1 - 1, kernelSize1);
+        fill_tile(tile, input_data, i, actual_tile_size); //comment for testing
+        // fill_tile(tile, input_data, i, tile_size); // for test only
+
+        conv1d_and_relu_multi_channel(tile, kernel1, intermediate, convbias1,channel_number1, actual_tile_size, kernelSize1);
         maxpool1d_channel(intermediate, tile_size,channel_number1,intermediate2);
         multi_channel_aggregation_and_pooling(intermediate2, output_tile, kernel2, channel_number1, channel_number2, tile_size/2, kernelSize2,i/2,(input_size -kernelSize1 +1)/2);
     }
@@ -180,7 +190,7 @@ void CNN_model_inference(real_t* input_data, real_t* output ,real_t** kernel1, i
 }
 
 
-static real_t input_data[16000];
+// static real_t input_data[16000];
 int main(void){
     // Test
     
@@ -191,23 +201,26 @@ int main(void){
     int tile_size = TILE_SIZE;
     int input_size = INPUT_SIZE;
     
-    for (int i = 0; i < 16000;i++){
-        input_data[i] = i/16000.0f;
-    }
+    // for (int i = 0; i < 16000;i++){
+    //     input_data[i] = i/16000.0f;
+    // }
     
     real_t output[2];
     
-    while(1) {
+    // while(1) {
         uint32_t inference_duration;
         inference_duration = xtimer_now_usec();
         
-        for (int i = 0; i < 3; i++) {
-            CNN_model_inference(input_data, output, conv1weight, channel_number1, kernelSize1, conv2weight, channel_number2, kernelSize2, tile_size, input_size, fc1weight, fc2weight,fc1bias,fc2bias, conv1bias, conv2bias);
-        }
+        // for (int i = 0; i < 3; i++) {
+            CNN_model_inference((real_t*)resampled_audio_bin, output, conv1weight, channel_number1, kernelSize1, conv2weight, channel_number2, kernelSize2, tile_size, input_size, fc1weight, fc2weight,fc1bias,fc2bias, conv1bias, conv2bias);
+        // }
         inference_duration = xtimer_now_usec() - inference_duration;
         printf("inference duration in usec: %" PRIu32 " \n", inference_duration);
-    }
-    
+    // }
+    printf("INPUT[0]: %.10f \n", *(real_t*)resampled_audio_bin);
+    printf("INPUT[0-100]:");
+    print_array((real_t*)resampled_audio_bin,100);
+
     printf("Inference output : \n");
     print_array(output,2);
     

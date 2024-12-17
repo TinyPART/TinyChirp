@@ -65,8 +65,8 @@ def write_weights(file, dim, weights, shape, name):
 
 
 if __name__ =='__main__':
-    model = StreamingCNNArch()
-    model.load_state_dict(torch.load("model.59.0.941964328289032.pth",map_location="cpu"))
+    model = StreamingCNNArch(4, 8)
+    model.load_state_dict(torch.load("./models/model1-4-8.pth",map_location="cpu"))
     write_weights_to_header(model,"array_data.h")
 
 
