@@ -48,6 +48,41 @@ To reproduce the results, please refer to `pilot/pilot_analysis.ipynb`.
 Also it shows the performance of *baseline* and *power-saving*. 
 
 # Evaluation of TinyML Models
+## Executing TinyChirp Models 
+If you installed RIOT_ML you can execute models on a PC (native) or on a board.
+
+Before model execution set the environment variable to tell python where to find the packages:
+```
+export TVM_HOME=/home/polina/TinyChirpDemo/tvm
+export PYTHONPATH=$TVM_HOME/python:${PYTHONPATH}
+```
+optionally:
+```
+export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libstdc++.so.6:$LD_PRELOAD
+```
+
+### TFLite models
+Use native to run directly on a PC or specify board:
+```
+cd RIOT-ML/
+python u-toe.py --per-model --board native /home/polina/TinyChirpDemo/TinyBirdSounds/tinyml_models/CNN_Mel/cnn_mel_spec_16kHz_full_int_q.tflite
+```
+
+### Torch models 
+CNN-Time example:
+```
+cd TinyBirdSounds/tinyml_models/CNN_Time/deployment/streaming_cnn/
+```
+If you run directly on a PC (native):
+```
+make BOARD=native
+make BOARD=native term
+```
+If you run on a board (e.g. microbit-v2):
+```
+make BOARD=microbit-v2 flash
+make BOARD=microbit-v2 term
+```
 
 ## Classification Performance
 
