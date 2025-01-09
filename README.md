@@ -53,7 +53,7 @@ If you installed RIOT_ML you can execute models on a PC (native) or on a board.
 
 Before model execution set the environment variable to tell python where to find the packages:
 ```
-export TVM_HOME=/home/polina/TinyChirpDemo/tvm
+export TVM_HOME={path-to-tvm-base-dir}
 export PYTHONPATH=$TVM_HOME/python:${PYTHONPATH}
 ```
 optionally:
@@ -65,13 +65,13 @@ export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libstdc++.so.6:$LD_PRELOAD
 Use native to run directly on a PC or specify board:
 ```
 cd RIOT-ML/
-python u-toe.py --per-model --board native /home/polina/TinyChirpDemo/TinyBirdSounds/tinyml_models/CNN_Mel/cnn_mel_spec_16kHz_full_int_q.tflite
+python u-toe.py --per-model --board native {path-to-tinychirp-base-dir(TinyBirdSounds)}/tinyml_models/CNN_Mel/cnn_mel_spec_16kHz_full_int_q.tflite
 ```
 
 ### Torch models 
 CNN-Time example:
 ```
-cd TinyBirdSounds/tinyml_models/CNN_Time/deployment/streaming_cnn/
+cd {path-to-tinychirp-base-dir(TinyBirdSounds)}/tinyml_models/CNN_Time/deployment/streaming_cnn/
 ```
 If you run directly on a PC (native):
 ```
