@@ -5,7 +5,77 @@
 #include <string.h>
 #include <inttypes.h>
 #include "xtimer.h"
-#include "blob/resampled_audio.bin.h"
+#include "ztimer.h"
+#include "blob/demo_samples_binary/target/t_audio_Corn_Bunting1.bin.h"
+#include "blob/demo_samples_binary/three_segments_of_ntb_chiffchaff/ntb_chiffchaff_segment1.bin.h"
+#include "blob/demo_samples_binary/three_segments_of_ntb_chiffchaff/ntb_chiffchaff_segment2.bin.h"
+#include "blob/demo_samples_binary/three_segments_of_ntb_chiffchaff/ntb_chiffchaff_segment3.bin.h"
+
+#include "periph/adc.h"
+#include "periph/gpio.h"
+#include "board.h"
+
+
+#define RES             ADC_RES_10BIT
+#define DELAY_US        62 //
+#define ADC_BITS 10
+#define GPIO_OUT_HIGHDRIVE GPIO_MODE(1, 1, 0, 3)
+
+const float ADC_REF_V = 3.3 / 4;
+
+#define PORT_BIT            (1 << 5)
+#define PIN_MASK            (0x1f)
+
+/* Compatibility wrapper defines for nRF9160 */
+#ifdef NRF_P0_S
+#define NRF_P0 NRF_P0_S
+#endif
+
+#ifdef NRF_P1_S
+#define NRF_P1 NRF_P1_S
+#endif
+/**
+ * @brief   Get the port's base address
+ */
+static inline NRF_GPIO_Type *port(gpio_t pin)
+{
+#if (CPU_FAM_NRF51)
+    (void) pin;
+    return NRF_GPIO;
+#elif defined(NRF_P1)
+    return (pin & PORT_BIT) ? NRF_P1 : NRF_P0;
+#else
+    (void) pin;
+    return NRF_P0;
+#endif
+}
+
+/**
+ * @brief   Get a pin's offset
+ */
+static inline int pin_num(gpio_t pin)
+{
+#if GPIO_COUNT > 1
+    return (pin & PIN_MASK);
+#else
+    return (int)pin;
+#endif
+}
+
+int gpio_init_out_highdrive(gpio_t pin)
+{
+
+    port(pin)->PIN_CNF[pin_num(pin)] = GPIO_OUT_HIGHDRIVE;
+    return 0;
+}
+
+void print_buffer_details(const float *buffer, size_t size) {
+    printf("Buffer size: %u\n", size);
+    printf("First 10 values:\n");
+    for (size_t i = 0; i < 10; i++) {
+        printf("ring_buffer[%u] = %.6f\n", i, buffer[i]);
+    }
+}
 
 #define MAX_LINE_LENGTH 1024
 
@@ -138,7 +208,7 @@ void mlp(real_t* input, real_t* output, int input_size, int hidden_size, int out
 #define KERNEL_SIZE1 3
 #define KERNEL_SIZE2 3
 #define TILE_SIZE 128
-#define INPUT_SIZE 48000
+#define INPUT_SIZE 16000
 #define ACTUAL_TILE_SIZE (TILE_SIZE + KERNEL_SIZE1 -1)
 
 static real_t tile[ACTUAL_TILE_SIZE];
@@ -146,7 +216,15 @@ static real_t intermediate_val[CHANNEL_NUM1][TILE_SIZE];
 static real_t intermediate2_val[CHANNEL_NUM1][TILE_SIZE/2];
 
 
-void CNN_model_inference(real_t* input_data, real_t* output ,real_t** kernel1, int channel_number1, int kernelSize1, real_t *** kernel2, int channel_number2, int kernelSize2, int tile_size, int input_size, real_t** weight1, real_t** weight2,real_t* fcbias1, real_t* fcbias2, real_t* convbias1, real_t* convbias2){
+
+void print_array_output_tile(const float *array, size_t size) {
+    printf("Output Tile:\n");
+    for (size_t i = 0; i < size; i++) {
+        printf("output_tile[%u] = %.6f\n", i, array[i]);
+    }
+}
+
+void CNN_model_inference(real_t* input_data, real_t* output ,real_t** kernel1, int channel_number1, int kernelSize1, real_t *** kernel2, int channel_number2, int kernelSize2, int tile_size, int input_size, real_t** weight1, real_t** weight2,real_t* fcbias1, real_t* fcbias2, real_t* convbias1, real_t* convbias2, real_t* output_tile){
 //    real_t tile[tile_size + kernelSize1 -1]; // take too much stack!
     real_t*  intermediate[CHANNEL_NUM1];
     real_t* intermediate2[CHANNEL_NUM1];
@@ -161,13 +239,13 @@ void CNN_model_inference(real_t* input_data, real_t* output ,real_t** kernel1, i
         intermediate2[i] = &intermediate2_val[i][0];
     }
     
-    real_t output_tile[channel_number2];
-    for (int i = 0; i< channel_number2;i++){
-        output_tile[i] = 0.0f;
-    }
+    // real_t output_tile[channel_number2];
+    // for (int i = 0; i< channel_number2;i++){
+    //     output_tile[i] = 0.0f;
+    // }
 
-    int outputSize = (input_size -kernelSize1 +1)/2 - kernelSize2 + 1;
-    printf("outputSize: %d \n", outputSize);
+    // int outputSize = (input_size -kernelSize1 +1)/2 - kernelSize2 + 1;
+    // printf("outputSize: %d \n", outputSize);
     for (int i = 0; i < input_size - kernelSize2 ; i+= tile_size){
 
         fill_tile(tile, input_data, i, actual_tile_size); //comment for testing
@@ -178,19 +256,21 @@ void CNN_model_inference(real_t* input_data, real_t* output ,real_t** kernel1, i
         multi_channel_aggregation_and_pooling(intermediate2, output_tile, kernel2, channel_number1, channel_number2, tile_size/2, kernelSize2,i/2,(input_size -kernelSize1 +1)/2);
     }
 
-    
-    for(int i = 0; i< channel_number2;i++){
-        output_tile[i] /= outputSize;;
-        // Since the bias is the same for every element of the same channel
-        // It is added outputSize times to a channel, so we just have to add it once after division
-        output_tile[i] += convbias2[i];
-    }
+    // print_array_output_tile(output_tile, channel_number2);
+    // for(int i = 0; i< channel_number2;i++){
+    //     output_tile[i] /= outputSize;;
+    //     // Since the bias is the same for every element of the same channel
+    //     // It is added outputSize times to a channel, so we just have to add it once after division
+    //     output_tile[i] += convbias2[i];
+    // }
+    // print_array_output_tile(output_tile, channel_number2);
 
-    mlp(output_tile, output, channel_number2, 64, 2, weight1, weight2, fcbias1, fcbias2 );
+    // mlp(output_tile, output, channel_number2, 64, 2, weight1, weight2, fcbias1, fcbias2 );
 }
 
 
 // static real_t input_data[16000];
+static float ring_buffer[16000];
 int main(void){
     // Test
     
@@ -200,29 +280,94 @@ int main(void){
     int kernelSize2 = KERNEL_SIZE2;
     int tile_size = TILE_SIZE;
     int input_size = INPUT_SIZE;
-    
-    // for (int i = 0; i < 16000;i++){
-    //     input_data[i] = i/16000.0f;
-    // }
-    
     real_t output[2];
+    int outputSize = (48000 -kernelSize1 +1)/2 - kernelSize2 + 1;
     
-    // while(1) {
-        uint32_t inference_duration;
-        inference_duration = xtimer_now_usec();
-        
-        // for (int i = 0; i < 3; i++) {
-            CNN_model_inference((real_t*)resampled_audio_bin, output, conv1weight, channel_number1, kernelSize1, conv2weight, channel_number2, kernelSize2, tile_size, input_size, fc1weight, fc2weight,fc1bias,fc2bias, conv1bias, conv2bias);
-        // }
-        inference_duration = xtimer_now_usec() - inference_duration;
-        printf("inference duration in usec: %" PRIu32 " \n", inference_duration);
-    // }
-    printf("INPUT[0]: %.10f \n", *(real_t*)resampled_audio_bin);
-    printf("INPUT[0-100]:");
-    print_array((real_t*)resampled_audio_bin,100);
+    
+    // set microphone variables
+    int sample = 0;
 
-    printf("Inference output : \n");
-    print_array(output,2);
+    puts("This test will sample all available ADC lines once every 62ms with\n"
+         "a 10-bit resolution and print the sampled results to STDIO\n\n");
+
+    int result;
+
+    result = gpio_init_out_highdrive(RUN_MIC_PIN);
+
+    if (result == 0) {
+        printf("Success!\n");
+    }
+    else {
+        printf("Failure!\n");
+    }
+    gpio_set(RUN_MIC_PIN);
+
+    /* initialize all available ADC lines */
+    if (adc_init(ADC_LINE(3)) < 0) {
+            printf("Initialization of ADC_LINE(%u) failed\n", 3);
+            return 1;
+        } else {
+            printf("Successfully initialized ADC_LINE(%u)\n", 3);
+        }
     
+    real_t output_tile[channel_number2];
+    for (int k = 0; k< channel_number2;k++){
+        output_tile[k] = 0.0f;
+    }
+
+    unsigned int i = 0;
+    unsigned int j = 0;
+    while (1) {
+            const int BIAS_10_BITS = 398;
+
+            // Read data from ADC
+            sample = adc_sample(ADC_LINE(3), RES) - BIAS_10_BITS;
+            // printf("ADC_LINE(%u): %i\n", 3, sample);
+
+
+            // Save in buffer normalized values from ADC
+            ring_buffer[i] = sample / 1023.0f;
+            i++;
+            
+            
+            // If 16000 samples are written to buffer we give buffer to model as for partial convolution
+            if (i == sizeof(ring_buffer) / sizeof(float)) {
+                printf("Buffer full! Triggering inference...\n");
+                print_buffer_details(ring_buffer, sizeof(ring_buffer) / sizeof(float));
+                i = 0;
+
+                // Model works with 3 sec audio but buffer has only 1 sec signal. So we use partial convolution - we aggregate output_tile
+                CNN_model_inference((real_t*)ring_buffer, output, conv1weight, channel_number1, kernelSize1, conv2weight, channel_number2, kernelSize2, tile_size, input_size, fc1weight, fc2weight,fc1bias,fc2bias, conv1bias, conv2bias, output_tile);
+                print_array_output_tile(output_tile, channel_number2);
+
+                j++;
+                printf("Debug: j = %d\n", j);
+            }
+
+            // If output_tile has data from 3 seconds (3 buffers) do a prediction
+            if (j == 3) {
+                printf("outputSize: %d \n", outputSize);
+                for(int l = 0; l< channel_number2;l++){
+                    output_tile[l] /= outputSize;;
+                    output_tile[l] += conv2bias[l];
+                }
+
+                mlp(output_tile, output, channel_number2, 64, 2, fc1weight, fc2weight,fc1bias,fc2bias);
+
+                printf("Inference output: \n");
+                print_array(output,2);
+
+                j = 0;
+                for (int k = 0; k< channel_number2;k++){
+                    output_tile[k] = 0.0f;
+                }
+
+            } 
+
+            ztimer_sleep(ZTIMER_USEC, DELAY_US);
+            
+
+    }
+
     return 0; 
 }

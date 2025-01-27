@@ -1,21 +1,19 @@
-# name of your application
-APPLICATION = patch_inference
+APPLICATION = TinyChirp_DEMO
+WERROR = 0
+BOARD ?= microbit-v2
 
-# If no BOARD is found in the environment, use this default:
-BOARD ?= native
+RIOTBASE= $(HOME)/RIOT
 
-# This has to be the absolute path to the RIOT base directory:
-RIOTBASE ?= $(HOME)/RIOT
-
-BLOBS += resampled_audio.bin
-# Comment this out to disable code in RIOT that does safety checking
-# which is not needed in a production environment but helps in the
-# development process:
 DEVELHELP ?= 0
-#CFLAGS_OPT = -O0
-CFLAGS += -DTHREAD_STACKSIZE_DEFAULT=2048
+
+FEATURES_REQUIRED = periph_adc periph_gpio
+USEMODULE += ztimer
+USEMODULE += ztimer_msec ztimer_usec
+USEMODULE += printf_float
+
+CFLAGS += -DADC_GAIN=SAADC_CH_CONFIG_GAIN_Gain4
+
 USEMODULE += printf_float xtimer
-# Change this to 0 show compiler invocation lines by default:
 QUIET ?= 1
 
 include $(RIOTBASE)/Makefile.include
